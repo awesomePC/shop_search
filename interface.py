@@ -7,6 +7,8 @@ import json
 
  #global main window
  #pyjsonview install and change
+# https://codingdeekshi.com/python-3-tkinter-pagination-project-to-fetch-data-from-rest-api-and-paginate-it-in-table-gui-desktop-app/
+
 
 def startScreen():
     
@@ -23,12 +25,13 @@ def startScreen():
       #window gird column, row define 
     window.columnconfigure(0, weight=1)
     window.columnconfigure(1, weight=1)
+    window.columnconfigure(2, weight=1)
     window.rowconfigure(0, weight=1)
 
 
     # global maincanvas
     maincanvas = tk.Frame(window,  width= window.winfo_screenwidth(), height= window.winfo_screenheight(), bg="gray")
-    maincanvas.grid(column=0, row=0, columnspan=2,  sticky='nsew')
+    maincanvas.grid(column=0, row=0, columnspan=3,  sticky='nsew')
 
     maincanvas.columnconfigure(0, weight=1)
     maincanvas.columnconfigure(1, weight=1)
@@ -108,10 +111,7 @@ def startScreen():
     btn_start = tk.Button(maincanvas, text = f"start", bg='#181515', fg='#FFF', command= lambda:start())
     btn_start.config(font=('Helvetica bold',30))
     btn_start.grid(column=13, row=8, columnspan=3, padx=0, sticky=tk.W)
-    #Create a Button to validate Entry Widget
-    # ttk.Button(win, text= "Okay",width= 20, command= display_text).pack(pady=20)
-
-
+ 
     #start mainwindow
     window.mainloop()
 
@@ -124,18 +124,15 @@ def onclick(id):
     select_button = id
     buttons[select_button].config(font=('Helvetica bold',20), fg="red")
 
-def mainScreen():
-    global window 
+def mainScreen(pagenum):
+    
+    global window, page
+    page = pagenum
     for widgets in window.winfo_children():
       widgets.destroy()
 
     # window.geometry("%dx%d" % (width, height))
     window.configure(bg='gray')
-
-    #  #secret label
-    # # secret = tk.Label(window, text='key',bg='#181515', fg='#FFF', font=50)
-    # # secret.config(font=('Helvetica bold',30))
-    # # secret.grid(column=4, row=2, columnspan=3, padx=40, sticky=tk.W)
 
     #global right frame
     global side_frame
@@ -144,53 +141,93 @@ def mainScreen():
     # define grid columns
     side_frame.columnconfigure(0, weight=1)
     side_frame.columnconfigure(1, weight=1)
+    side_frame.columnconfigure(2, weight=1)
     # define grid rows
     side_frame.rowconfigure(0, weight=1)
     side_frame.rowconfigure(1, weight=1)
-    side_frame.rowconfigure(2, weight=4)
+    side_frame.rowconfigure(2, weight=1)
     side_frame.rowconfigure(3, weight=1)
     side_frame.rowconfigure(4, weight=1)
 
-    global play
-    play = tk.Label(side_frame, text='PLAY', bg='#181515', fg='orange')
-    play.config(font=('Helvetica bold',30))
-    play.grid(column=0, row=0, padx= 10, sticky=tk.E)
+    global item_frame
+    item_frame = tk.Frame(side_frame, width=window.winfo_screenwidth()/3, height=window.winfo_screenheight()*2/3, bg="gray")
+    item_frame.grid(column=0, row=1, columnspan=3,  sticky='nsew')
+
+     # define grid columns
+    item_frame.columnconfigure(0, weight=1)
+    item_frame.columnconfigure(1, weight=1)
+    item_frame.columnconfigure(2, weight=1)
+    # define grid rows
+    item_frame.rowconfigure(0, weight=1)
+    item_frame.rowconfigure(1, weight=1)
+    item_frame.rowconfigure(2, weight=1)
+    item_frame.rowconfigure(3, weight=1)
+    item_frame.rowconfigure(4, weight=1)
+    item_frame.rowconfigure(5, weight=1)
+    item_frame.rowconfigure(6, weight=1)
+    item_frame.rowconfigure(7, weight=1)
+    item_frame.rowconfigure(8, weight=1)
+    item_frame.rowconfigure(9, weight=1)
+    item_frame.rowconfigure(10, weight=1)
+    item_frame.rowconfigure(11, weight=1)
+    item_frame.rowconfigure(12, weight=1)
+    item_frame.rowconfigure(11, weight=1)
+    item_frame.rowconfigure(12, weight=1)
+    item_frame.rowconfigure(13, weight=1)
+    item_frame.rowconfigure(14, weight=1)
+    item_frame.rowconfigure(15, weight=1)
+    item_frame.rowconfigure(16, weight=1)
+    item_frame.rowconfigure(17, weight=1)
+    item_frame.rowconfigure(18, weight=1)
+    item_frame.rowconfigure(19, weight=1)
+    item_frame.rowconfigure(20, weight=1)
+    item_frame.rowconfigure(21, weight=1)
+    item_frame.rowconfigure(22, weight=1)
+    item_frame.rowconfigure(23, weight=1)
+    item_frame.rowconfigure(24, weight=1)
+    item_frame.rowconfigure(25, weight=1)
+    item_frame.rowconfigure(26, weight=1)
+    item_frame.rowconfigure(27, weight=1)
+    item_frame.rowconfigure(28, weight=1)
+    item_frame.rowconfigure(29, weight=1)
+    item_frame.rowconfigure(30, weight=1)
+    item_frame.rowconfigure(31, weight=1)
+    item_frame.rowconfigure(32, weight=1)
+    item_frame.rowconfigure(33, weight=1)
+    item_frame.rowconfigure(34, weight=1)
     
-    btn_start = tk.Button(side_frame, text = f"start", bg='#181515', fg='#FFF', command= lambda:change_json())
-    btn_start.config(font=('Helvetica bold',30))
-    btn_start.grid(column=13, row=8, columnspan=3, padx=0, sticky=tk.W)
-
-
-    # data = {'name': "John", 'age': 31, 'city': "New York"}
-    # text = json.dumps(data, indent=2)
-    # with open("./taobao_json/shop_id=57301367/page_1/page.json") as f:
-    #     json_obj = json.load(f)
-    # json_obj = json.dumps(json_obj, indent=2)
-    # # root = tk.Tk()
-
-    # lbl = tk.Label(side_frame, text=json_obj, font="Times32", justify='left')
-    # lbl.grid(column=0, row=1, columnspan=3, padx= 10, sticky=tk.E)
-
-    # #global right frame
-    # global main_frame
-    # main_frame = tk.Frame(window, width=window.winfo_screenwidth()/2, height=window.winfo_screenheight(), bg="#f5f2eb")
-    # main_frame.grid(column=1, row=0, columnspan=1,  sticky='nsew')
-  
+    with open(f"./taobao_json/shop_id=57301367/page_{page}/page.json", encoding='utf-8' ) as f:
+        json_obj = json.load(f)
+    data = json_obj["items"]["item"]
+    items = []
+    i = 0
+    for row in data:
+        title = row["title"]
+        num_iid = row["num_iid"]
+        item = tk.Button(item_frame, text = f"dist_{title}", command=lambda: change_json(f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
+        # item.config(font=('Helvetica bold',20))
+        item.grid(column=1, row=i, columnspan=1, padx=0, sticky=tk.W)
+        
+        items.append(item)
+        i+=1
+    
+    # btn_start = tk.Button(side_frame, text = f"start", bg='#181515', fg='#FFF', command= lambda:change_json())
+    # btn_start.config(font=('Helvetica bold',30))
+    # btn_start.grid(column=13, row=8, columnspan=3, padx=0, sticky=tk.W)
 
     
-
-    # # define grid columns
-    # main_frame.columnconfigure(0, weight=1)
-    # main_frame.columnconfigure(1, weight=1)
-    # # define grid rows
-    # main_frame.rowconfigure(0, weight=1)
-    # main_frame.rowconfigure(1, weight=1)
-    # main_frame.rowconfigure(2, weight=4)
-    # main_frame.rowconfigure(3, weight=1)
-    # main_frame.rowconfigure(4, weight=1)
-
-    # import pyjsonviewer
-    # pyjsonviewer.view_data(json_file="../taobao_json/page_1/page.json")
+    tk.Button(side_frame, text="prev", command=pre_page).grid(row=3, column=0, sticky=tk.E)
+    
+    entry_text = tk.StringVar()
+    entry_text.set(page)
+    global page_input
+    page_input =tk.Entry(side_frame, width=5, textvariable=entry_text)
+    # page_input.config(font=('Helvetica bold',30))
+    page_input.grid(column=1, row=3, columnspan=1)
+    page_input.bind('<Return>', enterPageInput)
+ 
+    tk.Button(side_frame, text="next", command=next_page).grid(row=3, column=2, sticky=tk.W)
+   
 
     import pyjsonviewer
     global app
@@ -200,27 +237,41 @@ def mainScreen():
 
     # # when
     children = app.get_all_children(app.tree)
-    print([app.tree.item(item_id, 'text') for item_id in children])
-    app.grid(column=1, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+    # print([app.tree.item(item_id, 'text') for item_id in children])
+    app.grid(column=1, row=0, columnspan=2,  sticky=(tk.N, tk.S, tk.E, tk.W))
     
-
     app.init_search_box()
 
-    
+def next_page():
+    global page
+    page+=1
+    mainScreen(page)
 
-    # pass
+def pre_page():
+    global page
+    page-=1
+    mainScreen(page)
 
-def change_json():
+def change_json(path):
 
     global app
-    app.set_table_data_from_json_path("./taobao_json/shop_id=57301367/page_2/page.json")
+    app.set_table_data_from_json_path(path)
+    # app.set_table_data_from_json_path("./taobao_json/shop_id=57301367/page_2/page.json")
+
+def enterPageInput(event):
+    global page_input
+    input_pagenum = int(page_input.get())
+   
+    mainScreen(input_pagenum)
 
 def start():
     if not secret_input.get() or not key_input.get():
         showwarning(title='Warning', message='Please fill key and secret.')
     else:
-        mainScreen()
-
+        mainScreen(1)
+page = 1
+min_page = 1
+max_page = 1
 startScreen()
 
 # import pyjsonviewer
