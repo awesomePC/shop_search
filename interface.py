@@ -268,6 +268,7 @@ def mainScreen(pagenum):
     scrollbar = Scrollbar(side_frame, orient="vertical", command=side_canvas.yview)
     
     side_canvas.configure(yscrollcommand=scrollbar.set)
+    # side_canvas.configure(yscroll = scrollbar.set)
     # make the frame in the canvas_scroll
     side_canvas.create_window((4,4), window=item_frame, anchor="nw", tags="frame")
    
