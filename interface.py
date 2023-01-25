@@ -275,24 +275,37 @@ def mainScreen(pagenum):
     
     scrollbar = Scrollbar(side_frame, orient="vertical", command=side_canvas.yview)
     
-    side_canvas.configure(yscrollcommand=scrollbar.set)
-    # side_canvas.configure(yscroll = scrollbar.set)
+    
+   
     # make the frame in the canvas_scroll
-    side_canvas.create_window((4,4), window=item_frame, anchor="nw", tags="frame")
-
+    
     # side_canvas.bind_all("<MouseWheel>", lambda x: side_canvas.yview_scroll(1, 'units'))
-    side_canvas.bind_all("<MouseWheel>", lambda event:mouse_wheel(event))
+    
+    # side_canvas.bind_all("<MouseWheel>", lambda event:mouse_wheel(event))
+    
+    side_canvas.bind("<Enter>", lambda _: side_canvas.bind_all('<MouseWheel>', lambda event:mouse_wheel(event)))
+    side_canvas.bind("<Leave>", lambda _: side_canvas.unbind_all('<MouseWheel>'))
+
+    # side_canvas.bind_all("<Button-1>", lambda x: side_canvas.yview_scroll(1, 'units'))
+    # side_canvas.bind_all("<Button-5>", lambda x: side_canvas.yview_scroll(-1, 'units'))
    
     # bind the frame to the scrollbar
     item_frame.bind("<Configure>", lambda x: side_canvas.configure(scrollregion=side_canvas.bbox("all")))
+    side_canvas.create_window((0, 0), window=item_frame, anchor="nw")
+    side_canvas.configure(yscrollcommand=scrollbar.set)
+
     window.bind_all("<Down>", lambda x: side_canvas.yview_scroll(1, 'units')) # bind "Down" to scroll down
     window.bind_all("<Up>", lambda x: side_canvas.yview_scroll(-1, 'units')) # bind "Up" to scroll up
+
+    scrollbar.grid(column=2, row=0, columnspan=1,  sticky='nsw')
+    # scrollbar.crollbar.pack( side = RIGHT, fill = Y )
 
     with open(f"./taobao_json/shop_id=57301367/page_{page}/page.json", encoding='utf-8' ) as f:
         json_obj = json.load(f)
     data = json_obj["items"]["item"]
     global items, selected_item, max_page
     max_page = json_obj["items"]["page_count"]
+    total_results = json_obj["items"]["total_results"]
     items = []
     global first_item
     i = 0
@@ -356,23 +369,35 @@ def mainScreen(pagenum):
     
     #footer to show pre and next buttons.
     footer_frame = tk.Frame(side_frame, bg="white")
-    footer_frame.grid(column=1, row=1)
-    tk.Button(footer_frame, text="prev", command=pre_page).grid(row=1, column=0, sticky=tk.E)
+    footer_frame.grid(column=0, row=1, columnspan=2)
+    footer_frame.rowconfigure(0, weight=1)
+    footer_frame.columnconfigure(0, weight=1)
+    footer_frame.columnconfigure(1, weight=1)
+    footer_frame.columnconfigure(2, weight=1)
+    footer_frame.columnconfigure(3, weight=1)
+    footer_frame.columnconfigure(4, weight=1)
+
+    tk.Label(footer_frame, text=f"Total Products: {total_results}").grid(row=1, column=0, sticky=tk.W)
+    tk.Button(footer_frame, text="prev", command=pre_page).grid(row=1, column=1, padx=5, sticky=tk.E)
 
     entry_text = tk.StringVar()
-    entry_text.set(page)
+    entry_text.set(f"{page}/{max_page}")
     global page_input
     page_input =tk.Entry(footer_frame, width=5, textvariable=entry_text)
     # page_input.config(font=('Helvetica bold',30))
-    page_input.grid(column=1, row=1, columnspan=1)
+    page_input.grid(column=2, row=1, columnspan=1)
     page_input.bind('<Return>', enterPageInput)
  
-    tk.Button(footer_frame, text="next", command=next_page).grid(row=1, column=2, sticky=tk.W)
+    tk.Button(footer_frame, text="next", command=next_page).grid(row=1, column=3, sticky=tk.W)
     
     #right side Frame to show json tree.
     import pyjsonviewer
     global app
-    app = pyjsonviewer.JSONTreeFrame(window, json_path=f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{first_item}/{first_item}.json", initial_dir="shop_python")
+    with open(f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{first_item}/{first_item}.json", encoding='utf-8') as f:
+        json_obj = json.load(f)
+    json_data = json_obj["item"]
+    app = pyjsonviewer.JSONTreeFrame(window, json_data=json_data, initial_dir="shop_python")
+    # app = pyjsonviewer.JSONTreeFrame(window, json_path=f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{first_item}/{first_item}.json", initial_dir="shop_python")
     
     # # when
     # children = app.get_all_children(app.tree)
@@ -380,8 +405,7 @@ def mainScreen(pagenum):
     # app.grid(column=1, row=0, columnspan=2,  sticky=tk.W)
     app.grid(column=1, row=0, columnspan=2, rowspan=1,  sticky=(tk.N, tk.S, tk.E, tk.W))
     # app.init_search_box()
-    scrollbar.grid(column=2, row=0, columnspan=1,  sticky='nsw')
-    # scrollbar.crollbar.pack( side = RIGHT, fill = Y )
+  
 
 
     
@@ -479,7 +503,12 @@ def change_json(id,path):
     items[selected_item].config(fg="black")
     items[id].config(fg="red")
     selected_item = id
-    app.set_table_data_from_json_path(path)
+    # app.set_table_data_from_json_path(path)
+    with open(path, encoding='utf-8') as f:
+        json_obj = json.load(f)
+    json_data = json_obj["item"]
+    app.set_table_data_from_json(json_data)
+    # app = pyjsonviewer.JSONTreeFrame(window, json_data=json_data, initial_dir="shop_python")
     # app.set_table_data_from_json_path("./taobao_json/shop_id=57301367/page_2/page.json")
 
     # change images show
