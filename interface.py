@@ -173,7 +173,14 @@ def getImageDetailsrc(detail_json):
             if 'http' not in prop_img:
                 prop_img = f"http:{prop_img}"
             images_detail_path.append(imageURLAnalyse(prop_img))
-
+def mouse_wheel(event):
+    global side_canvas
+    if event.delta > 0:
+        # print("scroll forward")
+        side_canvas.yview_scroll(-1, 'units')
+    else:
+        # print("scroll backward")
+        side_canvas.yview_scroll(1, 'units')
 
 def mainScreen(pagenum):
     
@@ -202,6 +209,7 @@ def mainScreen(pagenum):
     # side_frame.rowconfigure(4, weight=1)
 
     #canvas
+    global side_canvas
     # side_canvas = tk.Canvas(side_frame, width=window.winfo_screenwidth()/3, height=window.winfo_screenheight()*3/4, bg="gray")
     side_canvas = tk.Canvas(side_frame, width=window.winfo_screenwidth()/3, height=window.winfo_screenheight()*3/4, bg="red")
     side_canvas.grid(column=0, row=0, columnspan=2,  sticky='nsew')
@@ -271,6 +279,9 @@ def mainScreen(pagenum):
     # side_canvas.configure(yscroll = scrollbar.set)
     # make the frame in the canvas_scroll
     side_canvas.create_window((4,4), window=item_frame, anchor="nw", tags="frame")
+
+    # side_canvas.bind_all("<MouseWheel>", lambda x: side_canvas.yview_scroll(1, 'units'))
+    side_canvas.bind_all("<MouseWheel>", lambda event:mouse_wheel(event))
    
     # bind the frame to the scrollbar
     item_frame.bind("<Configure>", lambda x: side_canvas.configure(scrollregion=side_canvas.bbox("all")))
