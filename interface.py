@@ -289,10 +289,29 @@ def mainScreen(pagenum):
         title = row["title"]
         num_iid = row["num_iid"]
         pic_url = row["pic_url"]
+        price = row["price"]
+        shop_name = row["shop_title"]
+        
+        row_frame = tk.Canvas(item_frame, bg="white")
+        # row_frame = tk.Canvas(item_frame, bg="white", height=150, width=450)
+        row_frame.grid(column=1, row=i, columnspan=1, padx=0, sticky=tk.W)
+
+        row_frame.rowconfigure(0, weight=1)
+        row_frame.rowconfigure(1, weight=1)
+        row_frame.rowconfigure(2, weight=1)
+
+        row_frame.columnconfigure(0, weight=1)
+
         if i == 0:
             first_item = num_iid
             images_detail_json = f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"
-        item = tk.Button(item_frame, text = f"{title}", command=lambda i = i, num_iid = num_iid: change_json(i, f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
+        item = tk.Button(row_frame, text = f"Title: {title}", command=lambda i = i, num_iid = num_iid: change_json(i, f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
+        
+        item_price = tk.Label(row_frame, text=f"Price: {price}")
+        item_price.grid(column=0, row=1, columnspan=1, padx=0, pady=5, sticky=tk.W)
+
+        item_shop = tk.Label(row_frame, text=f"Shop Name: {shop_name}")
+        item_shop.grid(column=0, row=2, columnspan=1, padx=0, pady=5, sticky=tk.W)
         #display image
 
         # Create a photoimage object of the image in the path
@@ -305,9 +324,9 @@ def mainScreen(pagenum):
         dir_4 = url_get.split("/")[3]
         file_name = url_get.split("/")[4]
         try:
-            image = Image.open(f"./images/{dir_1}/{dir_2}/{dir_3}/{dir_4}/{file_name}").resize((250, 250))
+            image = Image.open(f"./images/{dir_1}/{dir_2}/{dir_3}/{dir_4}/{file_name}").resize((150, 150))
         except FileNotFoundError:
-            image = Image.open(f"./images/img.alicdn.com/imgextra/i2/0/O1CN014bM2ko2Ca0zgUlE47_!!0-item_pic.jpg").resize((250, 250))
+            image = Image.open(f"./images/img.alicdn.com/imgextra/i2/0/O1CN014bM2ko2Ca0zgUlE47_!!0-item_pic.jpg").resize((150, 150))
         imagesrc = ImageTk.PhotoImage(image)
 
         label = tk.Label(item_frame, image=imagesrc)
@@ -315,11 +334,12 @@ def mainScreen(pagenum):
         label.grid(column=0, row=i, columnspan=1, padx=0, sticky=tk.E)
         #mouse event to label
         label.bind("<Button-1>", lambda e, i = i, num_iid = num_iid: change_json(i, f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
-        item.config(font=('Helvetica bold',20))
+        item.config(font=('Helvetica bold',10))
         if i == selected_item:
             item.config(fg="red")
-        item.grid(column=1, row=i, columnspan=1, padx=0, sticky=tk.W)
-        
+        item.grid(column=0, row=0, columnspan=1, padx=0, sticky=tk.W)
+        # item.grid(column=0, row=1, columnspan=1, padx=0, sticky=tk.W)
+        # item.grid(column=0, row=2, columnspan=1, padx=0, sticky=tk.W)
         items.append(item)
         i+=1
     
