@@ -282,7 +282,7 @@ def mainScreen(pagenum):
     # side_canvas.bind_all("<MouseWheel>", lambda x: side_canvas.yview_scroll(1, 'units'))
     
     # side_canvas.bind_all("<MouseWheel>", lambda event:mouse_wheel(event))
-    
+
     side_canvas.bind("<Enter>", lambda _: side_canvas.bind_all('<MouseWheel>', lambda event:mouse_wheel(event)))
     side_canvas.bind("<Leave>", lambda _: side_canvas.unbind_all('<MouseWheel>'))
 
@@ -377,7 +377,9 @@ def mainScreen(pagenum):
     footer_frame.columnconfigure(3, weight=1)
     footer_frame.columnconfigure(4, weight=1)
 
-    tk.Label(footer_frame, text=f"Total Products: {total_results}").grid(row=1, column=0, sticky=tk.W)
+    global total_results_label
+    total_results_label = tk.Label(footer_frame, text=f"Total Products: {total_results}")
+    total_results_label.grid(row=1, column=0, sticky=tk.W)
     tk.Button(footer_frame, text="prev", command=pre_page).grid(row=1, column=1, padx=5, sticky=tk.E)
 
     entry_text = tk.StringVar()
@@ -436,8 +438,109 @@ def mainScreen(pagenum):
     imglabel.image = imagesrc
     imglabel.grid(column=1, row=0, columnspan=1, padx=0)
     # label.grid(column=1, row=0, columnspan=1, padx=0, sticky='nsew')
-    
 
+#main screen later to prevent refresh
+
+def mainScreen_late(page):
+    with open(f"./taobao_json/shop_id=57301367/page_{page}/page.json", encoding='utf-8' ) as f:
+        json_obj = json.load(f)
+    data = json_obj["items"]["item"]
+    global items, selected_item, max_page
+    # max_page = json_obj["items"]["page_count"]
+    total_results = json_obj["items"]["total_results"]
+    global first_item, item_frame, items
+    i = 0
+    #remove item_frame children
+    for widgets in item_frame.winfo_children():
+      widgets.destroy()
+    items = []
+    for row in data:
+        title = row["title"]
+        num_iid = row["num_iid"]
+        pic_url = row["pic_url"]
+        price = row["price"]
+        shop_name = row["shop_title"]
+        
+        row_frame = tk.Canvas(item_frame, bg="white")
+        # row_frame = tk.Canvas(item_frame, bg="white", height=150, width=450)
+        row_frame.grid(column=1, row=i, columnspan=1, padx=0, sticky=tk.W)
+
+        row_frame.rowconfigure(0, weight=1)
+        row_frame.rowconfigure(1, weight=1)
+        row_frame.rowconfigure(2, weight=1)
+
+        row_frame.columnconfigure(0, weight=1)
+
+        if i == 0:
+            first_item = num_iid
+            images_detail_json = f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"
+        item = tk.Button(row_frame, text = f"Title: {title}", command=lambda i = i, num_iid = num_iid: change_json(i, f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
+        
+        item_price = tk.Label(row_frame, text=f"Price: {price}")
+        item_price.grid(column=0, row=1, columnspan=1, padx=0, pady=5, sticky=tk.W)
+
+        item_shop = tk.Label(row_frame, text=f"Shop Name: {shop_name}")
+        item_shop.grid(column=0, row=2, columnspan=1, padx=0, pady=5, sticky=tk.W)
+        #display image
+
+        # Create a photoimage object of the image in the path
+        #  "pic_url": "https://img.alicdn.com/imgextra/i3/133668489/O1CN01CNP9RX2Ca0nR2y9J1_!!0-item_pic.jpg",
+        url_get = pic_url.split("//")[1]
+        # print(url_get)
+        dir_1 = url_get.split("/")[0]
+        dir_2 = url_get.split("/")[1]
+        dir_3 = url_get.split("/")[2]
+        dir_4 = url_get.split("/")[3]
+        file_name = url_get.split("/")[4]
+        try:
+            image = Image.open(f"./images/{dir_1}/{dir_2}/{dir_3}/{dir_4}/{file_name}").resize((150, 150))
+        except FileNotFoundError:
+            image = Image.open(f"./images/img.alicdn.com/imgextra/i2/0/O1CN014bM2ko2Ca0zgUlE47_!!0-item_pic.jpg").resize((150, 150))
+        imagesrc = ImageTk.PhotoImage(image)
+
+        label = tk.Label(item_frame, image=imagesrc)
+        label.image = imagesrc
+        label.grid(column=0, row=i, columnspan=1, padx=0, sticky=tk.E)
+        #mouse event to label
+        label.bind("<Button-1>", lambda e, i = i, num_iid = num_iid: change_json(i, f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{num_iid}/{num_iid}.json"))
+        item.config(font=('Helvetica bold',10))
+        if i == selected_item:
+            item.config(fg="red")
+        item.grid(column=0, row=0, columnspan=1, padx=0, sticky=tk.W)
+        items.append(item)
+        i+=1
+    
+    global total_results_label
+    total_results_label.config(text=f"Total Products: {total_results}")
+    entry_text = tk.StringVar()
+    entry_text.set(f"{page}/{max_page}")
+
+    global page_input
+    page_input.config(textvariable=entry_text)
+   
+    #right side Frame to show json tree.
+    global app
+    with open(f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{first_item}/{first_item}.json", encoding='utf-8') as f:
+        json_obj = json.load(f)
+    json_data = json_obj["item"]
+    app.set_table_data_from_json(json_data)
+  
+
+    #image canvas on the right bottom
+    # get image detail sources
+    getImageDetailsrc(f"./taobao_json/shop_id=57301367/page_{page}/item_detail/{first_item}/{first_item}.json")
+    global images_detail_path, selected_iamges_datail
+    global image_canvas
+   
+    try:
+        image = Image.open(images_detail_path[selected_iamges_datail]).resize((750, 450))
+    except FileNotFoundError:
+        image = Image.open(f"./images/img.alicdn.com/imgextra/i2/0/O1CN014bM2ko2Ca0zgUlE47_!!0-item_pic.jpg").resize((750, 450))
+    imagesrc = ImageTk.PhotoImage(image)
+    global imglabel
+    imglabel.config(image=imagesrc)
+    imglabel.image = imagesrc
+       
 def next_page():
     global page, selected_item, max_page, selected_iamges_datail
     page+=1
@@ -447,7 +550,7 @@ def next_page():
     else:
         selected_item = 0
         selected_iamges_datail = 0
-        mainScreen(page)
+        mainScreen_late(page)
 
 def pre_page():
     global page, selected_item, min_page, selected_iamges_datail
@@ -458,7 +561,7 @@ def pre_page():
     else:
         selected_item = 0
         selected_iamges_datail = 0
-        mainScreen(page)
+        mainScreen_late(page)
 
 def nextImage():
     global page, max_page, selected_iamges_datail, images_detail_path
@@ -534,7 +637,7 @@ def enterPageInput(event):
     if input_pagenum > max_page or input_pagenum < min_page:
         showwarning(title='Warning', message=f'Please input value between {min_page} and {max_page}.')
     else:
-        mainScreen(input_pagenum)
+        mainScreen_late(input_pagenum)
 
 def start():
     if not secret_input.get() or not key_input.get():
