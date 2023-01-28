@@ -1,94 +1,86 @@
-
-from __future__ import print_function
 import requests
 import json
 import os
 import time
+from threading import Thread
 
-# hp.tmall.com
-# shop_id 57301367
-# https://api-gw.onebound.cn/taobao/item_search_shop/?key=t_856 2094008186&&shop_id=57301367&page=1&sort=&&lang=zh-CN&secret=20230114
+def readdir(name):
+    prev = name
+    with os.scandir(name) as i:
+        for entry in i:
+            if entry.is_file():
+                # print(entry.name)
+                filename = entry.name
+                #check if json file is item detail
+                if filename.split(".")[0] != "page" and filename.split(".")[1] == "json":
+                    global url_list
+                    url_list.append(f"{prev}/{filename}")
+                    ###############################normal way================################################################
 
+                    # downloadImage(filename,f"{prev}/{filename}")
 
+                    #############################Thread way================bad for server because it creates huge number of thread.######################################
 
-# Request example url The default request parameters have been URL-encoded
-# url = "https://api-gw.onebound.cn/taobao/item_search_shop/?key=t_856 2094008186&&shop_id=433655136&page=1&sort=&&lang=zh-CN&secret=20230114&cache=no"
-url = "https://api-gw.onebound.cn/taobao/item_search_shop/?key=t_856 2094008186&&shop_id=57301367&page=1&sort=&&lang=zh-CN&secret=20230114"
-headers = {
-    "Accept-Encoding": "gzip",
-    "Connection": "close"
-}
+                    # downloadThread = Thread(target=downloadImage, args=(f"{prev}/{filename}",))
+                    # downloadThread.isDaemon = True
+                    # downloadThread.start()
 
-if __name__ == "__main__":
-    r = requests.get(url, headers=headers)
-    json_obj = r.json()
-    print(json_obj)
-
-    #anayse first response to get data including page count...
-    # print(json_obj['items']['page_count'])
-
-    page = int(json_obj['items']['page'])
-    page_count = int(json_obj['items']['page_count'])
-    
-    #analyse url to get neccessary info
-    url_split = url.split("/")
-
-    #district --> example: taobao, 1688, Dangdang...
-    district = url_split[3]
-
-    #shop id inside district
-    shop_id = url_split[5].split("&&")[1].split("&")[0]
-
-    filename = f'{district}/{shop_id}/page_{page}/{page}.json'
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    with open(f'{district}/{shop_id}/page_{page}/{page}.json', 'w') as f:
-        json.dump(json_obj, f, indent=4)
+                    ###############################final way using thread poll###########################################
+            elif entry.is_dir():
+                # print(entry.name)
+                readdir(f"{prev}/{entry.name}")
 
 
+def downloadImage(filepath):
+    print("ok")
+    print(filepath)
+    global download_num, downloaded_num
 
-    for item in json_obj['items']['item']:
-        num_iid = item["num_iid"]
-        pic_url = item["pic_url"]
-        #image download    ====================
-        if 'http' not in pic_url:
-            pic_url = f"http:{pic_url}"
-        response = requests.get(pic_url)
-        # if response.status_code == 200:
-        #     print("img")
+    with open(filepath) as f:
+        json_obj = json.load(f)
 
-        #     filename = f"{district}/{shop_id}/page_{page}/item_image/{num_iid}.jpg"
-        #     os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # print(json_obj)
 
-        #     with open(f"{district}/{shop_id}/page_{page}/item_image/{num_iid}.jpg", 'wb') as f:
-        #         f.write(response.content)
-        #     print("ok")
-        #end image downlaod  ====================
-
-        #page item detail
-
-        url = f"https://api-gw.onebound.cn/taobao/item_get/?key=t_856 2094008186&&num_iid={num_iid}&is_promotion=1&&lang=zh-CN&secret=20230114&cache=no"
-        r = requests.get(url, headers=headers)
-        json_obj = r.json()
-
-        filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/{num_iid}.json"
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        with open(f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/{num_iid}.json", 'w') as f:
-            json.dump(json_obj, f, indent=4)
-
-        #images
-        #--pic_url image
+    #image download
+  
+    #--pic_url image
+    if json_obj['item']['format_check'] == "fail":
+        print("======================fail=========================")
+    else:
         pic_url = json_obj['item']['pic_url']
         if 'http' not in pic_url:
             pic_url = f"http:{pic_url}"
-        response = requests.get(pic_url)
-        if response.status_code == 200:
-            filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/pic_url/{num_iid}.jpg"
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
+        urlForDic = pic_url.split("//")[1]
+        dic_01 = urlForDic.split("/")[0]
+        dic_02 = urlForDic.split("/")[1]
+        dic_03 = urlForDic.split("/")[2]
+        dic_04 = urlForDic.split("/")[3]
+        img_filename = urlForDic.split("/")[4]
 
-            with open(f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/pic_url/{num_iid}.jpg", 'wb') as f:
-                f.write(response.content)
+        filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+        isExist = os.path.exists(filename)
+
+        if isExist is False:
+            download_num += 1
+            
+            count = 0
+            while True:
+                response = requests.get(pic_url)
+                print(pic_url ,response.status_code)
+                if response.status_code == 200:
+                    
+                    downloaded_num += 1
+                    
+                    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+                    with open(filename, 'wb') as f:
+                        f.write(response.content)
+                    break
+                count += 1
+                time.sleep(1)
+                if count == 5:
+                    break
 
         #--items_image
         item_len = len(json_obj['item']['item_imgs']) 
@@ -98,14 +90,39 @@ if __name__ == "__main__":
 
                 if 'http' not in item_img:
                     item_img = f"http:{item_img}"
-                response = requests.get(item_img)
 
-                if response.status_code == 200:
-                    filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/item_imgs/{i}.jpg"
-                    os.makedirs(os.path.dirname(filename), exist_ok=True)
+                urlForDic = item_img.split("//")[1]
+                dic_01 = urlForDic.split("/")[0]
+                dic_02 = urlForDic.split("/")[1]
+                dic_03 = urlForDic.split("/")[2]
+                dic_04 = urlForDic.split("/")[3]
+                img_filename = urlForDic.split("/")[4]
+                filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+                isExist = os.path.exists(filename)
 
-                    with open(f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/item_imgs/{i}.jpg", 'wb') as f:
-                        f.write(response.content)
+                if isExist is False:
+                    download_num += 1
+                    count = 0
+                    while True:
+                        response = requests.get(item_img)
+                        print(item_img ,response.status_code)
+                        if response.status_code == 200:
+                            # filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+
+                            downloaded_num += 1
+                            os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+                            with open(filename, 'wb') as f:
+                                f.write(response.content)
+
+                            break
+                             
+                        count += 1
+                        time.sleep(1)
+                        if count == 5:
+                            break
+            
+                
         #--desc_image
         desc_len = len(json_obj['item']['desc_img']) 
         if desc_len > 0:
@@ -114,14 +131,35 @@ if __name__ == "__main__":
 
                 if 'http' not in desc_img:
                     desc_img = f"http:{desc_img}"
-                response = requests.get(desc_img)
+                
+                urlForDic = desc_img.split("//")[1]
+                dic_01 = urlForDic.split("/")[0]
+                dic_02 = urlForDic.split("/")[1]
+                dic_03 = urlForDic.split("/")[2]
+                dic_04 = urlForDic.split("/")[3]
+                img_filename = urlForDic.split("/")[4]
+                filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+                isExist = os.path.exists(filename)
 
-                if response.status_code == 200:
-                    filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/desc_imgs/{i}.jpg"
-                    os.makedirs(os.path.dirname(filename), exist_ok=True)
+                if isExist is False:
+                    download_num += 1
+                    count = 0
+                    while True:
+                        response = requests.get(desc_img)
+                        print(desc_img, response.status_code)
+                        if response.status_code == 200:
+                            # filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+                            downloaded_num += 1
+                            os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-                    with open(f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/desc_imgs/{i}.jpg", 'wb') as f:
-                        f.write(response.content)
+                            with open(filename, 'wb') as f:
+                                f.write(response.content)
+                            break
+                             
+                        count += 1
+                        time.sleep(1)
+                        if count == 5:
+                            break
         #--pros_image
         prop_len = len(json_obj['item']['prop_imgs']['prop_img']) 
         if prop_len > 0:
@@ -130,53 +168,56 @@ if __name__ == "__main__":
 
                 if 'http' not in prop_img:
                     prop_img = f"http:{prop_img}"
-                response = requests.get(prop_img)
+                urlForDic = prop_img.split("//")[1]
+                dic_01 = urlForDic.split("/")[0]
+                dic_02 = urlForDic.split("/")[1]
+                dic_03 = urlForDic.split("/")[2]
+                dic_04 = urlForDic.split("/")[3]
+                img_filename = urlForDic.split("/")[4]
+                filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+                isExist = os.path.exists(filename)
 
-                if response.status_code == 200:
-                    filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/prop_imgs/{i}.jpg"
-                    os.makedirs(os.path.dirname(filename), exist_ok=True)
+                if isExist is False:
+                    download_num += 1
+                    count = 0
+                    while True:
+                        response = requests.get(prop_img)
+                        print(prop_img ,response.status_code)
+                        if response.status_code == 200:
+                            downloaded_num += 1
+                            # filename = f"images/{dic_01}/{dic_02}/{dic_03}/{dic_04}/{img_filename}"
+                            os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-                    with open(f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/images/prop_imgs/{i}.jpg", 'wb') as f:
-                        f.write(response.content)
-        #--video
-        # video_len = len(json_obj['item']['video'])
-        # if video_len > 0:
-        #     video_url = json_obj['item']['video']['url']
-            
-        #     # import urllib2
-        #     import urllib.request as urllib2
+                            with open(filename, 'wb') as f:
+                                f.write(response.content)
+                            break
+                             
+                        count += 1
+                        time.sleep(1)
+                        if count == 5:
+                            break
 
+url_list = []
+download_num = 0
+downloaded_num = 0
+readdir("./taobao_json")
+print(url_list)
+from concurrent.futures import ThreadPoolExecutor
+with ThreadPoolExecutor(max_workers=16) as executor:
+    executor.map(downloadImage, url_list) #urls=[list of url]
 
-        #     # file_name = 'trial_video.mp4' 
-        #     filename = f"{district}/{shop_id}/page_{page}/item_detail/{num_iid}/video/1.mp4"
-        #     os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        #     rsp = urllib2.urlopen(video_url)
-
-        #     with open(filename,'wb') as f:
-        #         f.write(rsp.read())
-
-        #end images
-
-
-        #end item detail 
-
-
-    #loop for page count
-    while page < page_count:
-        page += 1
-        url = f"https://api-gw.onebound.cn/taobao/item_search_shop/?key=t_856 2094008186&&shop_id=57301367&page={page}&sort=&&lang=zh-CN&secret=20230114"
-        print(url)
-        r = requests.get(url, headers=headers)
-        json_obj = r.json()
-        
-        filename = f'{district}/{shop_id}/page_{page}/{page}.json'
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        with open(f'{district}/{shop_id}/page_{page}/{page}.json', 'w') as f:
-            json.dump(json_obj, f, indent=4)
-        
-        time.sleep(3)
+print(f"download_num: {download_num}")
+print(f"downloaded_num: {downloaded_num}")
+# http://img.alicdn.com/imgextra/i4/133668489/O1CN01Cy4UrN2Ca0trldU12_!!133668489-0-lubanu-s.jpg 420
 
 
 
+# https://img.alicdn.com/imgextra/i1/133668489/O1CN01bqlhnn2Ca0xOIP14p_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i4/133668489/O1CN01jkHHpW2Ca10Ph5FoO_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i2/133668489/O1CN01kfXTyF2Ca0snHHGdo_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i2/133668489/O1CN012ZObFG2Ca0uYuPi1Q_!!133668489.jpg 420
+# https://img.alicdn.com/imgextra/i3/133668489/O1CN01jOkcS32Ca0xH9bD7f_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i1/133668489/O1CN01fKWd0C2Ca10PZiCO0_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i2/133668489/O1CN012ZObFG2Ca0uYuPi1Q_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i2/133668489/O1CN016FObtT2Ca0sppnHV9_!!133668489.jpg 420
+# http://img.alicdn.com/imgextra/i1/133668489/O1CN01fKWd0C2Ca10PZiCO0_!!133668489.jpg 420
